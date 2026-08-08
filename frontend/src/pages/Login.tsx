@@ -103,12 +103,12 @@ export const Login = () => {
           </form>
           
           <div className="mt-6 border-t border-slate-800 pt-6">
-            <p className="text-xs text-slate-500 text-center mb-2">Demo Credentials (Password: password123)</p>
+            <p className="text-xs text-slate-500 text-center mb-2">Demo Accounts (Password format: Role@123)</p>
             <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
-              <div className="bg-slate-800/50 p-2 rounded">admin@fundsroom.com (Admin)</div>
-              <div className="bg-slate-800/50 p-2 rounded">sales@fundsroom.com (Sales)</div>
-              <div className="bg-slate-800/50 p-2 rounded">warehouse@fundsroom.com (Warehouse)</div>
-              <div className="bg-slate-800/50 p-2 rounded">accounts@fundsroom.com (Accounts)</div>
+              <div className="bg-slate-800/50 p-2 rounded">admin@fundsroom.com<br/><span className="text-indigo-400">Admin@123</span></div>
+              <div className="bg-slate-800/50 p-2 rounded">sales@fundsroom.com<br/><span className="text-indigo-400">Sales@123</span></div>
+              <div className="bg-slate-800/50 p-2 rounded">warehouse@fundsroom.com<br/><span className="text-indigo-400">Warehouse@123</span></div>
+              <div className="bg-slate-800/50 p-2 rounded">accounts@fundsroom.com<br/><span className="text-indigo-400">Accounts@123</span></div>
             </div>
           </div>
         </div>

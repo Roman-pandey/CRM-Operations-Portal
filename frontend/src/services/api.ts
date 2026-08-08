@@ -25,7 +25,7 @@ api.interceptors.response.use(
 );
 
 export const authApi = {
-  login: (credentials: any) => api.post<LoginResponse>('/auth/login', credentials).then(res => res.data),
+  login: (credentials: any) => api.post<ApiResponse<{ token: string; user: User }>>('/auth/login', credentials).then(res => res.data.data),
   getMe: () => api.get<ApiResponse<User>>('/auth/me').then(res => res.data.data),
 };
 
