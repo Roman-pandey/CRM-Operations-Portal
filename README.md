@@ -119,11 +119,25 @@ All test accounts use the password pattern: `<Role>@123`
 
 ---
 
-## ⚡ Quick Start & Setup
+## ⚙️ Environment Variables Management
+
+### Backend (`backend/.env`)
+
+| Variable | Description | Example Value |
+|----------|-------------|---------------|
+| `PORT` | Server listening port | `5001` |
+| `DATABASE_URL` | MySQL connection string | `mysql://root:password@localhost:3306/fundsroom_erp` |
+| `JWT_SECRET` | Secret key for signing JWT tokens | `fundsroom-super-secret-jwt-key-2026` |
+| `JWT_EXPIRES_IN` | JWT token expiration duration | `7d` |
+| `FRONTEND_URL` | Allowed CORS origin for frontend | `http://localhost:5173` |
+
+---
+
+## ⚡ Quick Start & Local Setup Guide
 
 ### Prerequisites
 - Node.js v18+
-- MySQL Server running locally (or remote MySQL connection string)
+- MySQL Server running locally (or remote MySQL host like Aiven/Railway)
 
 ### 1. Database & Backend Setup
 
@@ -134,7 +148,8 @@ cd backend
 npm install
 
 # Configure environment variables (.env)
-# DATABASE_URL="mysql://root:password@localhost:3306/fundsroom_erp"
+cp .env.example .env
+# Edit DATABASE_URL in .env with your MySQL credentials
 
 # Generate Prisma Client
 npx prisma generate
@@ -145,7 +160,7 @@ npx prisma migrate dev --name init
 # Seed Database with Demo Accounts & Sample Data
 npm run seed
 
-# Start Backend Dev Server (Port 5000)
+# Start Backend Dev Server (Port 5001)
 npm run dev
 ```
 
@@ -165,6 +180,29 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 
+## ☁️ Deployment Guide (Free Tier Platform Options)
+
+### 1. Database Deployment (Railway / Aiven / PlanetScale / Render)
+1. Create a MySQL database instance on Railway, Aiven, or Render.
+2. Obtain your remote connection string: `mysql://<user>:<pass>@<host>:<port>/<dbname>`.
+
+### 2. Backend Deployment (Render / Railway / Fly.io)
+1. Connect your GitHub repository to **Render** or **Railway**.
+2. Set Root Directory to `backend`.
+3. Set Build Command: `npm install && npx prisma generate && npm run build`.
+4. Set Start Command: `npx prisma migrate deploy && npm start`.
+5. Add Environment Variables: `PORT`, `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `FRONTEND_URL`.
+
+### 3. Frontend Deployment (Vercel / Netlify / Render Static)
+1. Connect your GitHub repository to **Vercel** or **Netlify**.
+2. Set Root Directory to `frontend`.
+3. Build Command: `npm run build`.
+4. Output Directory: `dist`.
+5. (Optional) Configure rewrite rule in `vercel.json` or `_redirects` for SPA routing:
+   `/* -> /index.html 200`.
+
+---
+
 ## 📄 Postman API Collection
 
 A pre-configured Postman collection is included in `postman/FundsRoom-ERP.postman_collection.json`.
@@ -179,6 +217,14 @@ It covers:
 - `POST /api/challans/:id/confirm` (Row-locked confirmation)
 - `POST /api/challans/:id/cancel` (Stock restoration)
 - `GET /api/dashboard` (Stats overview)
+
+---
+
+## 📌 Known Limitations & Future Scope
+
+1. **Challan PDF Generation**: Currently, challans are viewed in-app. Adding PDF download via `pdfmake` or `puppeteer` is planned for future releases.
+2. **Email Notifications**: Automatic email reminders for follow-up dates and low stock alerts via Nodemailer/SendGrid.
+3. **Multi-Currency Support**: Currently defaults to INR (₹).
 
 ---
 
