@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, ArrowUp, ArrowDown, Package } from 'lucide-react';
+import { ArrowLeft, ArrowUp, ArrowDown, Package, Plus, Minus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { productApi } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
@@ -25,8 +25,12 @@ export const StockAdjustment = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [adjusting, setAdjusting] = useState(false);
 
-  const [form, setForm] = useState({
-    movementType: 'IN' as 'IN' | 'OUT',
+  const [form, setForm] = useState<{
+    movementType: 'IN' | 'OUT';
+    quantity: number | string;
+    reason: string;
+  }>({
+    movementType: 'IN',
     quantity: 1,
     reason: ''
   });
@@ -57,10 +61,17 @@ export const StockAdjustment = () => {
   const handleAdjustStock = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
+
+    const parsedQty = typeof form.quantity === 'number' ? form.quantity : parseInt(form.quantity as string, 10);
+    if (!parsedQty || isNaN(parsedQty) || parsedQty <= 0) {
+      toast.error('Please enter a valid quantity greater than 0');
+      return;
+    }
+
     setAdjusting(true);
     try {
       await productApi.adjustStock(Number(id), {
-        quantity: form.quantity,
+        quantity: parsedQty,
         movementType: form.movementType,
         reason: form.reason
       });
@@ -72,6 +83,28 @@ export const StockAdjustment = () => {
     } finally {
       setAdjusting(false);
     }
+  };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val === '') {
+      setForm({ ...form, quantity: '' });
+    } else {
+      const num = parseInt(val, 10);
+      if (!isNaN(num)) {
+        setForm({ ...form, quantity: Math.max(1, num) });
+      }
+    }
+  };
+
+  const handleIncrement = () => {
+    const current = typeof form.quantity === 'number' ? form.quantity : (parseInt(form.quantity as string, 10) || 0);
+    setForm({ ...form, quantity: current + 1 });
+  };
+
+  const handleDecrement = () => {
+    const current = typeof form.quantity === 'number' ? form.quantity : (parseInt(form.quantity as string, 10) || 1);
+    setForm({ ...form, quantity: Math.max(1, current - 1) });
   };
 
   if (loading || !product) {
@@ -153,15 +186,36 @@ export const StockAdjustment = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Quantity</label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={form.quantity}
-                    onChange={(e) => setForm({ ...form, quantity: parseInt(e.target.value) || 1 })}
-                    className="w-full bg-white/5 border border-white/10 text-slate-100 rounded-lg px-4 py-2.5 focus:border-indigo-500 focus:outline-none"
-                  />
+                  <label className="block text-sm font-medium text-slate-300 mb-1.5">Quantity (Type manually or use buttons)</label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDecrement}
+                      className="p-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 rounded-lg transition-colors shrink-0"
+                      title="Decrease quantity"
+                    >
+                      <Minus size={18} />
+                    </button>
+
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={form.quantity}
+                      onChange={handleQuantityChange}
+                      placeholder="Enter quantity"
+                      className="w-full bg-white/5 border border-white/10 text-slate-100 rounded-lg px-4 py-2.5 text-center font-medium focus:border-indigo-500 focus:outline-none"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={handleIncrement}
+                      className="p-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 rounded-lg transition-colors shrink-0"
+                      title="Increase quantity"
+                    >
+                      <Plus size={18} />
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -179,7 +233,7 @@ export const StockAdjustment = () => {
                 <button
                   type="submit"
                   disabled={adjusting}
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg px-4 py-2 transition-all disabled:opacity-50"
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg px-4 py-2 transition-all disabled:opacity-50 font-medium"
                 >
                   {adjusting ? 'Adjusting...' : 'Submit Adjustment'}
                 </button>
