@@ -52,7 +52,19 @@ export const deleteProduct = async (id: number) => {
 };
 
 export const getLowStockProducts = async () => {
-  return await prisma.$queryRaw`SELECT * FROM products WHERE current_stock <= minimum_stock ORDER BY current_stock ASC` as any[];
+  const raw = await prisma.$queryRaw`SELECT * FROM products WHERE current_stock <= minimum_stock ORDER BY current_stock ASC` as any[];
+  return raw.map((p: any) => ({
+    id: p.id,
+    productName: p.product_name || p.productName,
+    sku: p.sku,
+    category: p.category,
+    unitPrice: p.unit_price || p.unitPrice,
+    currentStock: p.current_stock ?? p.currentStock,
+    minimumStock: p.minimum_stock ?? p.minimumStock,
+    warehouseLocation: p.warehouse_location || p.warehouseLocation,
+    createdAt: p.created_at || p.createdAt,
+    updatedAt: p.updated_at || p.updatedAt,
+  }));
 };
 
 export const adjustStock = async (productId: number, quantity: number, movementType: MovementType, reason: string, userId: number) => {

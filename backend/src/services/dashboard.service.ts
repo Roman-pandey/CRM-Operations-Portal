@@ -21,7 +21,19 @@ export const getDashboardStats = async () => {
     prisma.challan.findMany({ take: 5, orderBy: { createdAt: 'desc' }, include: { customer: { select: { customerName: true } }, createdBy: { select: { name: true } } } })
   ]);
 
-  const lowStockProductsList = await prisma.$queryRaw`SELECT * FROM products WHERE current_stock <= minimum_stock ORDER BY current_stock ASC` as any[];
+  const rawLowStock = await prisma.$queryRaw`SELECT * FROM products WHERE current_stock <= minimum_stock ORDER BY current_stock ASC` as any[];
+  const lowStockProductsList = rawLowStock.map((p: any) => ({
+    id: p.id,
+    productName: p.product_name || p.productName,
+    sku: p.sku,
+    category: p.category,
+    unitPrice: p.unit_price || p.unitPrice,
+    currentStock: p.current_stock ?? p.currentStock,
+    minimumStock: p.minimum_stock ?? p.minimumStock,
+    warehouseLocation: p.warehouse_location || p.warehouseLocation,
+    createdAt: p.created_at || p.createdAt,
+    updatedAt: p.updated_at || p.updatedAt,
+  }));
 
   return {
     totalCustomers,
