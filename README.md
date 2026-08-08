@@ -1,25 +1,33 @@
 # FundsRoom Mini ERP + CRM Operations Portal
 
-A production-grade, full-stack Mini ERP & CRM Operations Portal built for wholesale/distribution businesses. Features Role-Based Access Control (RBAC), Customer CRM with follow-up tracking, Inventory Management with low-stock alerts, and an atomic, concurrency-safe Sales Challan workflow backed by MySQL row-level locking.
+A production-grade, full-stack Mini ERP & CRM Operations Portal built for wholesale and distribution businesses. Features Role-Based Access Control (RBAC), Customer CRM with follow-up tracking, Inventory Management with low-stock alerts, printable Tax Invoices, and an atomic, concurrency-safe Sales Challan workflow backed by MySQL row-level locking (`SELECT ... FOR UPDATE`).
 
 ---
 
-## 🌟 Key Features
+## 📋 Evaluation Submission Checklist
+
+- [x] **Working Local Setup**: Fully functional Express.js backend (Port 5001) + React Vite frontend (Port 5173).
+- [x] **Postman Collection**: Located in `postman/FundsRoom-ERP.postman_collection.json`.
+- [x] **Clear Documentation**: Server setup, environment management, execution, deployment, and technical assumptions detailed below.
+
+---
+
+## 🌟 Key Features & Modules
 
 - 🔐 **Authentication & RBAC**: JWT + bcrypt authentication supporting 4 specialized employee roles (`ADMIN`, `SALES`, `WAREHOUSE`, `ACCOUNTS`).
-- 👥 **Customer CRM**: Complete customer lifecycle management (Lead/Active/Inactive, Retail/Wholesale/Distributor) with detailed follow-up history logs.
+- 👥 **Customer CRM**: Complete customer lifecycle management (Lead/Active/Inactive, Retail/Wholesale/Distributor) with follow-up history logs.
 - 📦 **Inventory & Stock Management**: Real-time product management, SKU tracking, low-stock threshold alerts, and manual Stock IN/OUT audit logging.
 - 📄 **Sales Challan Workflow**:
   - **Draft Phase**: Create & edit draft challans without impacting stock.
-  - **Product Snapshot**: Stores immutable product snapshots (`productNameSnapshot`, `skuSnapshot`, `unitPriceSnapshot`) at the time of creation to protect historical financial integrity against price changes.
-  - **Atomic Stock Confirmation**: Executes inside a MySQL transaction using **row-level locking (`SELECT ... FOR UPDATE`)** to prevent concurrency over-deduction race conditions.
+  - **Product Snapshot**: Stores immutable product snapshots (`productNameSnapshot`, `skuSnapshot`, `unitPriceSnapshot`) at creation time to protect historical financial integrity against future price changes.
+  - **Atomic Stock Confirmation**: Executes inside a MySQL transaction using **row-level locking (`SELECT ... FOR UPDATE`)** to prevent race conditions and inventory over-deduction.
   - **Cancellation Safeguards**: Restores inventory cleanly on cancellation with double-restoration protection (idempotent state transitions).
+- 🖨️ **Printable Tax Invoice**: Generator modal with GST calculations (CGST 9% + SGST 9%), itemized snapshots, customer details, and signatory block formatted cleanly for A4 print.
 - 📊 **Executive Dashboard**: Real-time business overview featuring total customers, active products, low-stock alerts, sales challan breakdowns, and recent order feeds.
-- 🎨 **Modern Dark UI**: Modern responsive interface built with React 18, TypeScript, and Tailwind CSS v4 featuring glassmorphism cards, dynamic badges, and micro-interactions.
 
 ---
 
-## 🏗️ Architecture & Technology Stack
+## 🏗️ Technical Architecture & Server Setup
 
 ```
                        ┌─────────────────────────┐
@@ -54,10 +62,11 @@ A production-grade, full-stack Mini ERP & CRM Operations Portal built for wholes
                          └────────────────────┘
 ```
 
-### Stack Summary
-- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS v4, Lucide Icons, React Hot Toast, Axios.
-- **Backend**: Node.js, Express.js (v5), TypeScript, Prisma ORM, Zod, JWT, bcryptjs.
-- **Database**: MySQL.
+### How the Server Was Set Up
+1. **Modular Architecture**: Built using a strict 3-tier Layered Architecture (`Routes` → `Controllers` → `Services` → `Prisma ORM`).
+2. **Validation & Security**: Incoming HTTP requests are parsed and sanitized using **Zod** schema validators before reaching controllers.
+3. **Database Layer**: Data access is managed via **Prisma ORM** with strong TypeScript typing and declarative schema migrations.
+4. **Error Handling**: Centralized error middleware captures validation errors (Zod), authorization failures, database locks, and returns structured JSON responses `{ success: false, message, errors }`.
 
 ---
 
@@ -69,7 +78,7 @@ A production-grade, full-stack Mini ERP & CRM Operations Portal built for wholes
 | Customers (Read)  |  ✅   |  ✅   |    ❌     |    ✅    |
 | Customers (CRUD)  |  ✅   |  ✅   |    ❌     |    ❌    |
 | Follow-up Notes   |  ✅   |  ✅   |    ❌     |    ❌    |
-| Products (Read)   |  ✅   |  ❌   |    ✅     |    ✅    |
+| Products (Read)   |  ✅   |  ✅   |    ✅     |    ✅    |
 | Products (CRUD)   |  ✅   |  ❌   |    ✅     |    ❌    |
 | Stock Adjustments |  ✅   |  ❌   |    ✅     |    ❌    |
 | Stock History     |  ✅   |  ❌   |    ✅     |    ✅    |
@@ -80,151 +89,172 @@ A production-grade, full-stack Mini ERP & CRM Operations Portal built for wholes
 
 ---
 
-## 🛡️ Implementation Assumptions & Design Decisions
+## 🛡️ Key Assumptions & Design Decisions
 
 1. **Stock Restoration on Cancellation**:
-   The assignment requires `DRAFT`, `CONFIRMED`, and `CANCELLED` statuses. As an implementation assumption:
-   - `CONFIRMED → CANCELLED`: Restores product stock and logs an `IN` stock movement.
+   - `CONFIRMED → CANCELLED`: Restores product stock and logs an `IN` stock movement record.
    - `DRAFT → CANCELLED`: Changes status without altering inventory (stock was never deducted).
-   - `CANCELLED → CANCELLED`: Idempotent no-op safeguard against double-restoration.
+   - `CANCELLED → CANCELLED`: Idempotent safeguard against double-restoration.
 
 2. **Concurrency Safety & Row Locking**:
-   When confirming a challan, simultaneous user requests could lead to race conditions. We execute `SELECT ... FOR UPDATE` inside a database transaction to lock product rows before validating stock levels:
+   When confirming a sales challan, simultaneous requests could cause race conditions. We execute `SELECT ... FOR UPDATE` inside a Prisma transaction to lock product rows before validating stock levels:
    ```
    BEGIN TRANSACTION
      ├── Lock Challan Row (FOR UPDATE)
      ├── Verify status === 'DRAFT'
      ├── Lock Product Rows (FOR UPDATE)
-     ├── Verify stock >= requested
+     ├── Verify stock >= requested quantity
      ├── Deduct stock & create OUT stock movements
      └── Update Challan status → CONFIRMED
    COMMIT
    ```
 
-3. **Product Price Snapshots**:
-   Challans capture price/name snapshot data inside `challan_items` during creation. Subsequent product price updates do not affect past challan totals.
+3. **Immutable Price Snapshots**:
+   Challans capture price and product name snapshot data inside `challan_items` during creation. Subsequent product price changes do not alter past challan or tax invoice totals.
 
 ---
 
-## 🔑 Demo Credentials
+## ⚙️ How Environment Variables Are Managed
+
+Environment variables are managed separately for backend and frontend using standard `.env` files.
+
+### 1. Backend Environment Variables (`backend/.env`)
+
+```env
+PORT=5001
+DATABASE_URL="mysql://root:password@localhost:3306/fundsroom_erp"
+JWT_SECRET="fundsroom-super-secret-jwt-key-2026"
+JWT_EXPIRES_IN="7d"
+FRONTEND_URL="http://localhost:5173"
+NODE_ENV="development"
+```
+
+| Variable | Description | Default / Example |
+|----------|-------------|-------------------|
+| `PORT` | Backend server port | `5001` |
+| `DATABASE_URL` | MySQL connection string | `mysql://user:pass@localhost:3306/dbname` |
+| `JWT_SECRET` | Secret key for JWT authentication | `fundsroom-super-secret-jwt-key-2026` |
+| `JWT_EXPIRES_IN` | JWT token validity duration | `7d` |
+| `FRONTEND_URL` | Allowed CORS origin | `http://localhost:5173` |
+
+### 2. Frontend Environment Variables (`frontend/.env`)
+
+```env
+VITE_API_URL="http://localhost:5001/api"
+```
+
+---
+
+## ⚡ How to Run the Project Locally
+
+### Prerequisites
+- **Node.js**: v18.0.0 or higher
+- **MySQL**: Server running locally on port 3306 (or remote host like Aiven/Railway)
+
+### 1. Clone Repository & Setup Backend
+
+```bash
+git clone https://github.com/Roman-pandey/CRM-Operations-Portal.git
+cd CRM-Operations-Portal/backend
+
+# Install dependencies
+npm install
+
+# Setup environment variables
+cp .env.example .env
+
+# Generate Prisma Client & push schema to database
+npx prisma generate
+npx prisma db push
+
+# Seed initial seed data & demo accounts
+npm run seed
+
+# Start backend server (Port 5001)
+npm start
+```
+
+### 2. Setup Frontend
+
+Open a new terminal window:
+
+```bash
+cd CRM-Operations-Portal/frontend
+
+# Install dependencies
+npm install
+
+# Start Vite dev server (Port 5173)
+npm run dev
+```
+
+Open your browser at [http://localhost:5173](http://localhost:5173).
+
+---
+
+## 🔑 Default Login Credentials
 
 All test accounts use the password pattern: `<Role>@123`
 
 | Role | Email | Password | Allowed Scope |
 |------|-------|----------|---------------|
 | **Admin** | `admin@fundsroom.com` | `Admin@123` | Full System Access |
-| **Sales** | `sales@fundsroom.com` | `Sales@123` | CRM + Create/Confirm Challans |
-| **Warehouse** | `warehouse@fundsroom.com` | `Warehouse@123` | Products + Stock Adjustments |
+| **Sales** | `sales@fundsroom.com` | `Sales@123` | CRM + Sales Challans + Products (Read) |
+| **Warehouse** | `warehouse@fundsroom.com` | `Warehouse@123` | Products + Stock Adjustments + Movements |
 | **Accounts** | `accounts@fundsroom.com` | `Accounts@123` | Financial Review + Challan Confirmation |
 
 ---
 
-## ⚙️ Environment Variables Management
+## 📮 Postman Collection Instructions
 
-### Backend (`backend/.env`)
+A complete, ready-to-import Postman Collection is included at:
+📁 `postman/FundsRoom-ERP.postman_collection.json`
 
-| Variable | Description | Example Value |
-|----------|-------------|---------------|
-| `PORT` | Server listening port | `5001` |
-| `DATABASE_URL` | MySQL connection string | `mysql://root:password@localhost:3306/fundsroom_erp` |
-| `JWT_SECRET` | Secret key for signing JWT tokens | `fundsroom-super-secret-jwt-key-2026` |
-| `JWT_EXPIRES_IN` | JWT token expiration duration | `7d` |
-| `FRONTEND_URL` | Allowed CORS origin for frontend | `http://localhost:5173` |
-
----
-
-## ⚡ Quick Start & Local Setup Guide
-
-### Prerequisites
-- Node.js v18+
-- MySQL Server running locally (or remote MySQL host like Aiven/Railway)
-
-### 1. Database & Backend Setup
-
-```bash
-cd backend
-
-# Install dependencies
-npm install
-
-# Configure environment variables (.env)
-cp .env.example .env
-# Edit DATABASE_URL in .env with your MySQL credentials
-
-# Generate Prisma Client
-npx prisma generate
-
-# Run Database Migrations
-npx prisma migrate dev --name init
-
-# Seed Database with Demo Accounts & Sample Data
-npm run seed
-
-# Start Backend Dev Server (Port 5001)
-npm run dev
-```
-
-### 2. Frontend Setup
-
-```bash
-cd ../frontend
-
-# Install dependencies
-npm install
-
-# Start Frontend Dev Server (Port 5173)
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+### How to Import & Test:
+1. Open Postman app.
+2. Click **Import** → select `postman/FundsRoom-ERP.postman_collection.json`.
+3. Set collection environment variable `baseUrl` = `http://localhost:5001/api`.
+4. Run request **`Authentication -> Login (Admin)`**.
+5. Copy the returned `token` into collection variable `authToken`.
+6. Test endpoints:
+   - `GET /api/customers` (List & Search)
+   - `POST /api/customers/:id/followups` (Follow-up log)
+   - `GET /api/products/low-stock` (Inventory alerts)
+   - `POST /api/products/:id/stock` (Stock IN/OUT adjustment)
+   - `POST /api/challans` (Create draft challan)
+   - `POST /api/challans/:id/confirm` (Row-locked stock deduction)
+   - `GET /api/dashboard` (Executive dashboard stats)
 
 ---
 
-## ☁️ Deployment Guide (Free Tier Platform Options)
+## ☁️ How to Deploy the Project Online
 
-### 1. Database Deployment (Railway / Aiven / PlanetScale / Render)
-1. Create a MySQL database instance on Railway, Aiven, or Render.
-2. Obtain your remote connection string: `mysql://<user>:<pass>@<host>:<port>/<dbname>`.
+### 1. Database (Free MySQL on Aiven / Railway)
+1. Create a MySQL database instance on [Aiven.io](https://aiven.io) or [Railway.app](https://railway.app).
+2. Copy the connection URI string: `mysql://user:pass@host:port/dbname`.
 
-### 2. Backend Deployment (Render / Railway / Fly.io)
-1. Connect your GitHub repository to **Render** or **Railway**.
-2. Set Root Directory to `backend`.
+### 2. Backend API (Render.com)
+1. Create a **Web Service** on [Render.com](https://render.com) connected to your GitHub repository.
+2. Set Root Directory = `backend`.
 3. Set Build Command: `npm install && npx prisma generate && npm run build`.
-4. Set Start Command: `npx prisma migrate deploy && npm start`.
-5. Add Environment Variables: `PORT`, `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `FRONTEND_URL`.
+4. Set Start Command: `npm start`.
+5. Add Environment Variables:
+   - `DATABASE_URL` = *(Your MySQL URL)*
+   - `PORT` = `5001`
+   - `JWT_SECRET` = `super_secret_jwt_key`
+   - `NODE_ENV` = `production`
+6. Run database migrations / seed:
+   ```bash
+   DATABASE_URL="your-remote-db-url" npx prisma db push && npm run seed
+   ```
 
-### 3. Frontend Deployment (Vercel / Netlify / Render Static)
-1. Connect your GitHub repository to **Vercel** or **Netlify**.
-2. Set Root Directory to `frontend`.
-3. Build Command: `npm run build`.
-4. Output Directory: `dist`.
-5. (Optional) Configure rewrite rule in `vercel.json` or `_redirects` for SPA routing:
-   `/* -> /index.html 200`.
-
----
-
-## 📄 Postman API Collection
-
-A pre-configured Postman collection is included in `postman/FundsRoom-ERP.postman_collection.json`.
-
-It covers:
-- `POST /api/auth/login` (Auth token auto-save)
-- `GET /api/customers` (Search, pagination, filters)
-- `POST /api/customers/:id/followups` (Follow-up notes)
-- `GET /api/products/low-stock` (Alerts)
-- `POST /api/products/:id/stock` (Stock IN/OUT)
-- `POST /api/challans` (Draft creation)
-- `POST /api/challans/:id/confirm` (Row-locked confirmation)
-- `POST /api/challans/:id/cancel` (Stock restoration)
-- `GET /api/dashboard` (Stats overview)
-
----
-
-## 📌 Known Limitations & Future Scope
-
-1. **Challan PDF Generation**: Currently, challans are viewed in-app. Adding PDF download via `pdfmake` or `puppeteer` is planned for future releases.
-2. **Email Notifications**: Automatic email reminders for follow-up dates and low stock alerts via Nodemailer/SendGrid.
-3. **Multi-Currency Support**: Currently defaults to INR (₹).
+### 3. Frontend Web App (Vercel.com)
+1. Create a **New Project** on [Vercel.com](https://vercel.com) importing the GitHub repository.
+2. Set Root Directory = `frontend`.
+3. Set Framework Preset = `Vite`.
+4. Add Environment Variable:
+   - `VITE_API_URL` = `https://your-backend-render-url.onrender.com/api`
+5. Deploy!
 
 ---
 
@@ -237,24 +267,24 @@ CRM Operations Portal/
 │   │   ├── schema.prisma       # Database models & enums
 │   │   └── seed.ts             # Demo data seeder
 │   ├── src/
-│   │   ├── config/             # Env configuration
+│   │   ├── config/             # Environment configuration
 │   │   ├── controllers/        # Request handlers
-│   │   ├── middleware/         # Auth, RBAC, Validation & Errors
-│   │   ├── routes/             # REST endpoints
+│   │   ├── middleware/         # Auth, RBAC, Validation & Error handler
+│   │   ├── routes/             # REST API endpoints
 │   │   ├── services/           # Business logic & Transactions
-│   │   ├── validators/         # Zod schemas
+│   │   ├── validators/         # Zod schema validators
 │   │   ├── app.ts              # Express application setup
 │   │   └── server.ts           # HTTP server entrypoint
 │   └── package.json
 ├── frontend/
 │   ├── src/
-│   │   ├── components/         # Reusable UI components (StatsCard, Modals, etc.)
+│   │   ├── components/         # Modal, ConfirmDialog, StatsCard UI components
 │   │   ├── context/            # AuthContext provider
-│   │   ├── layouts/            # Dashboard & ProtectedRoute layouts
-│   │   ├── pages/              # Responsive React pages (14 routes)
-│   │   ├── services/           # Axios API services
+│   │   ├── layouts/            # DashboardLayout & ProtectedRoute
+│   │   ├── pages/              # Responsive React pages
+│   │   ├── services/           # Axios API service calls
 │   │   ├── types/              # TypeScript interfaces
-│   │   ├── utils/              # Permissions & helper functions
+│   │   ├── utils/              # Permissions matrix & helper functions
 │   │   ├── App.tsx             # React Router v6 setup
 │   │   └── main.tsx
 │   └── package.json
