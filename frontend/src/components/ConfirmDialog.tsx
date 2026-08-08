@@ -11,6 +11,7 @@ interface ConfirmDialogProps {
   message: string;
   isDestructive?: boolean;
   variant?: 'danger' | 'warning' | string;
+  confirmText?: string;
 }
 
 export const ConfirmDialog = ({
@@ -21,7 +22,8 @@ export const ConfirmDialog = ({
   title,
   message,
   isDestructive = false,
-  variant
+  variant,
+  confirmText
 }: ConfirmDialogProps) => {
   const handleCancel = () => {
     if (onCancel) onCancel();
@@ -33,7 +35,7 @@ export const ConfirmDialog = ({
   return (
     <Modal isOpen={isOpen} onClose={handleCancel} title={title}>
       <div className="flex items-start space-x-4">
-        <div className={`p-2 rounded-full ${isRed ? 'bg-red-500/10 text-red-400' : 'bg-amber-500/10 text-amber-400'}`}>
+        <div className={`p-2 rounded-full ${isRed ? 'bg-red-500/10 text-red-400' : 'bg-indigo-500/10 text-indigo-400'}`}>
           <AlertTriangle className="w-6 h-6" />
         </div>
         <div>
@@ -58,7 +60,7 @@ export const ConfirmDialog = ({
               : 'bg-indigo-600 hover:bg-indigo-500'
           }`}
         >
-          Confirm
+          {confirmText || 'Confirm'}
         </button>
       </div>
     </Modal>

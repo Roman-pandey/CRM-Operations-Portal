@@ -60,8 +60,11 @@ function App() {
               <Route path="products/:id/stock" element={<StockAdjustment />} />
             </Route>
             
-            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'WAREHOUSE', 'ACCOUNTS']} />}>
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'WAREHOUSE', 'ACCOUNTS', 'SALES']} />}>
               <Route path="products" element={<ProductList />} />
+            </Route>
+            
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'WAREHOUSE', 'ACCOUNTS']} />}>
               <Route path="stock-movements" element={<StockMovements />} />
             </Route>
 
