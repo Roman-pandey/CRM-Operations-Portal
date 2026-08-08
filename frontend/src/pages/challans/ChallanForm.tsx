@@ -47,8 +47,8 @@ export const ChallanForm = () => {
           customerApi.getAll({ limit: 100 }),
           productApi.getAll({ limit: 100 })
         ]);
-        setCustomers(customersRes as any || []);
-        setProducts(productsRes as any || []);
+        setCustomers(customersRes?.data || []);
+        setProducts(productsRes?.data || []);
       } catch (err: any) {
         toast.error(err?.response?.data?.message || 'Failed to load initial data');
       } finally {

@@ -43,36 +43,36 @@ function App() {
             </Route>
 
             {/* Customers - ADMIN, SALES, ACCOUNTS */}
-            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SALES', 'ACCOUNTS']} />}>
-              <Route path="customers" element={<CustomerList />} />
-              <Route path="customers/:id" element={<CustomerDetail />} />
-            </Route>
-            
             <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SALES']} />}>
               <Route path="customers/new" element={<CustomerForm />} />
               <Route path="customers/:id/edit" element={<CustomerForm />} />
             </Route>
+            
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SALES', 'ACCOUNTS']} />}>
+              <Route path="customers" element={<CustomerList />} />
+              <Route path="customers/:id" element={<CustomerDetail />} />
+            </Route>
 
             {/* Products - ADMIN, WAREHOUSE, ACCOUNTS */}
-            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'WAREHOUSE', 'ACCOUNTS']} />}>
-              <Route path="products" element={<ProductList />} />
-              <Route path="stock-movements" element={<StockMovements />} />
-            </Route>
-            
             <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'WAREHOUSE']} />}>
               <Route path="products/new" element={<ProductForm />} />
               <Route path="products/:id/edit" element={<ProductForm />} />
               <Route path="products/:id/stock" element={<StockAdjustment />} />
             </Route>
+            
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'WAREHOUSE', 'ACCOUNTS']} />}>
+              <Route path="products" element={<ProductList />} />
+              <Route path="stock-movements" element={<StockMovements />} />
+            </Route>
 
             {/* Challans - ADMIN, SALES, ACCOUNTS */}
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SALES']} />}>
+              <Route path="challans/new" element={<ChallanForm />} />
+            </Route>
+
             <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SALES', 'ACCOUNTS']} />}>
               <Route path="challans" element={<ChallanList />} />
               <Route path="challans/:id" element={<ChallanDetail />} />
-            </Route>
-            
-            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SALES']} />}>
-              <Route path="challans/new" element={<ChallanForm />} />
             </Route>
 
             {/* Users - ADMIN ONLY */}
