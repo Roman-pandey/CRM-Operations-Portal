@@ -9,7 +9,7 @@ export const canModifyCustomers = (role?: Role) => {
 };
 
 export const canAccessProducts = (role?: Role) => {
-  return ['ADMIN', 'WAREHOUSE', 'ACCOUNTS'].includes(role || '');
+  return ['ADMIN', 'WAREHOUSE', 'ACCOUNTS', 'SALES'].includes(role || '');
 };
 
 export const canModifyProducts = (role?: Role) => {

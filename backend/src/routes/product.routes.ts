@@ -9,9 +9,9 @@ const router = Router();
 
 router.use(auth);
 
-router.get('/low-stock', authorize('ADMIN', 'WAREHOUSE', 'ACCOUNTS'), productController.getLowStockProducts);
-router.get('/', authorize('ADMIN', 'WAREHOUSE', 'ACCOUNTS'), productController.getAllProducts);
-router.get('/:id', authorize('ADMIN', 'WAREHOUSE', 'ACCOUNTS'), productController.getProductById);
+router.get('/low-stock', authorize('ADMIN', 'WAREHOUSE', 'ACCOUNTS', 'SALES'), productController.getLowStockProducts);
+router.get('/', authorize('ADMIN', 'WAREHOUSE', 'ACCOUNTS', 'SALES'), productController.getAllProducts);
+router.get('/:id', authorize('ADMIN', 'WAREHOUSE', 'ACCOUNTS', 'SALES'), productController.getProductById);
 router.post('/', authorize('ADMIN', 'WAREHOUSE'), validate(createProductSchema), productController.createProduct);
 router.put('/:id', authorize('ADMIN', 'WAREHOUSE'), validate(updateProductSchema), productController.updateProduct);
 router.delete('/:id', authorize('ADMIN', 'WAREHOUSE'), productController.deleteProduct);
