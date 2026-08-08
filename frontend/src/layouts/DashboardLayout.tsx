@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
@@ -26,7 +26,7 @@ export const DashboardLayout = () => {
   const navigate = useNavigate();
 
   const navItems = [
-    { to: '/', icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard', show: true },
+    { to: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard', show: true },
     { to: '/customers', icon: <Users className="w-5 h-5" />, label: 'Customers', show: canAccessCustomers(user?.role) },
     { to: '/products', icon: <Package className="w-5 h-5" />, label: 'Products', show: canAccessProducts(user?.role) },
     { to: '/stock-movements', icon: <ArrowLeftRight className="w-5 h-5" />, label: 'Stock Movements', show: canViewStockMovements(user?.role) },
@@ -48,7 +48,10 @@ export const DashboardLayout = () => {
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 transform transition-transform duration-300 lg:translate-x-0 lg:static lg:block ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="h-full flex flex-col">
           <div className="flex items-center justify-between h-16 px-6 border-b border-slate-800">
-            <span className="text-xl font-bold text-slate-100">FundsRoom ERP</span>
+            <Link to="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+              <img src="/logo.jpg" alt="FundsRoom Logo" className="w-7 h-7 rounded-lg object-cover border border-indigo-500/30 shadow-sm" />
+              <span className="text-lg font-bold text-slate-100">FundsRoom ERP</span>
+            </Link>
             <button className="lg:hidden text-slate-400" onClick={() => setIsMobileMenuOpen(false)}>
               <X className="w-6 h-6" />
             </button>
@@ -112,7 +115,10 @@ export const DashboardLayout = () => {
           >
             <Menu className="w-6 h-6" />
           </button>
-          <span className="text-lg font-bold text-slate-100">FundsRoom</span>
+          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <img src="/logo.jpg" alt="FundsRoom Logo" className="w-6 h-6 rounded-md object-cover border border-indigo-500/30" />
+            <span className="text-lg font-bold text-slate-100">FundsRoom</span>
+          </Link>
           <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm">
             {user?.name.charAt(0)}
           </div>

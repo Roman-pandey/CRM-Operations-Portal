@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { ProtectedRoute } from './layouts/ProtectedRoute';
+import LandingPage from './pages/LandingPage';
 import { Login } from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
@@ -33,54 +34,59 @@ function App() {
           }}
         />
         <Routes>
+          {/* Public Landing Page */}
+          <Route path="/" element={<LandingPage />} />
+
+          {/* Authentication Route */}
           <Route path="/login" element={<Login />} />
           
-          <Route path="/" element={<DashboardLayout />}>
-            {/* All authenticated users can access dashboard and profile */}
+          {/* Authenticated App Routes inside DashboardLayout */}
+          <Route element={<DashboardLayout />}>
+            {/* Dashboard & Profile */}
             <Route element={<ProtectedRoute />}>
-              <Route index element={<Dashboard />} />
-              <Route path="profile" element={<Profile />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
             </Route>
 
             {/* Customers - ADMIN, SALES, ACCOUNTS */}
             <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SALES']} />}>
-              <Route path="customers/new" element={<CustomerForm />} />
-              <Route path="customers/:id/edit" element={<CustomerForm />} />
+              <Route path="/customers/new" element={<CustomerForm />} />
+              <Route path="/customers/:id/edit" element={<CustomerForm />} />
             </Route>
             
             <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SALES', 'ACCOUNTS']} />}>
-              <Route path="customers" element={<CustomerList />} />
-              <Route path="customers/:id" element={<CustomerDetail />} />
+              <Route path="/customers" element={<CustomerList />} />
+              <Route path="/customers/:id" element={<CustomerDetail />} />
             </Route>
 
             {/* Products - ADMIN, WAREHOUSE, ACCOUNTS */}
             <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'WAREHOUSE']} />}>
-              <Route path="products/new" element={<ProductForm />} />
-              <Route path="products/:id/edit" element={<ProductForm />} />
-              <Route path="products/:id/stock" element={<StockAdjustment />} />
+              <Route path="/products/new" element={<ProductForm />} />
+              <Route path="/products/:id/edit" element={<ProductForm />} />
+              <Route path="/products/:id/stock" element={<StockAdjustment />} />
             </Route>
             
             <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'WAREHOUSE', 'ACCOUNTS', 'SALES']} />}>
-              <Route path="products" element={<ProductList />} />
+              <Route path="/products" element={<ProductList />} />
             </Route>
             
             <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'WAREHOUSE', 'ACCOUNTS']} />}>
-              <Route path="stock-movements" element={<StockMovements />} />
+              <Route path="/stock-movements" element={<StockMovements />} />
             </Route>
 
             {/* Challans - ADMIN, SALES, ACCOUNTS */}
             <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SALES']} />}>
-              <Route path="challans/new" element={<ChallanForm />} />
+              <Route path="/challans/new" element={<ChallanForm />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SALES', 'ACCOUNTS']} />}>
-              <Route path="challans" element={<ChallanList />} />
-              <Route path="challans/:id" element={<ChallanDetail />} />
+              <Route path="/challans" element={<ChallanList />} />
+              <Route path="/challans/:id" element={<ChallanDetail />} />
             </Route>
 
             {/* Users - ADMIN ONLY */}
             <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
-              <Route path="users" element={<UserList />} />
+              <Route path="/users" element={<UserList />} />
             </Route>
             
             <Route path="*" element={<Navigate to="/" replace />} />
