@@ -18,6 +18,7 @@ const formatCurrency = (n: number) => `₹${Number(n).toLocaleString('en-IN')}`;
 export const ProductList = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
@@ -26,6 +27,28 @@ export const ProductList = () => {
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const canModify = canModifyProducts(user?.role);
+
+  // Fetch unique categories for dropdown options
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await productApi.getAll({ limit: 100 });
+        if (response.data) {
+          const uniqueCats = Array.from(
+            new Set(
+              response.data
+                .map((p: any) => p.category)
+                .filter((c: any) => Boolean(c) && typeof c === 'string' && c.trim() !== '')
+            )
+          ) as string[];
+          setCategories(uniqueCats);
+        }
+      } catch (error) {
+        console.error('Failed to load categories list', error);
+      }
+    };
+    loadCategories();
+  }, []);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -75,16 +98,31 @@ export const ProductList = () => {
       <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow-xl p-6">
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="flex-1">
-            <SearchBar value={search} onChange={setSearch} placeholder="Search by name or SKU..." />
+            <SearchBar 
+              value={search} 
+              onChange={(val: string) => {
+                setSearch(val);
+                setPage(1);
+              }} 
+              placeholder="Search by product name or SKU..." 
+            />
           </div>
           <div className="w-full sm:w-64">
-            <input
-              type="text"
-              placeholder="Filter by category"
+            <select
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 text-slate-100 rounded-lg px-4 py-2 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none placeholder-slate-500"
-            />
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setPage(1);
+              }}
+              className="w-full bg-slate-900 border border-slate-700 text-slate-100 rounded-lg px-4 py-2.5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none text-sm cursor-pointer"
+            >
+              <option value="" className="bg-slate-900 text-slate-100">All Categories</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat} className="bg-slate-900 text-slate-100">
+                  {cat}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -94,7 +132,7 @@ export const ProductList = () => {
           <EmptyState
             icon={<ArrowLeftRight size={48} className="text-slate-500" />}
             title="No products found"
-            description="Get started by adding some products to your inventory."
+            description="No products match your current search or category filter."
           />
         ) : (
           <>
@@ -115,8 +153,14 @@ export const ProductList = () => {
                   {products.map((product) => (
                     <tr key={product.id} className="hover:bg-white/5 transition-colors">
                       <td className="px-4 py-3 text-sm text-white font-medium">{product.productName}</td>
-                      <td className="px-4 py-3 text-sm text-slate-300">{product.sku}</td>
-                      <td className="px-4 py-3 text-sm text-slate-300">{product.category || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-slate-300 font-mono">{product.sku}</td>
+                      <td className="px-4 py-3 text-sm text-slate-300">
+                        {product.category ? (
+                          <span className="bg-slate-800 text-slate-300 text-xs px-2 py-0.5 rounded border border-slate-700">
+                            {product.category}
+                          </span>
+                        ) : '-'}
+                      </td>
                       <td className="px-4 py-3 text-sm text-slate-300">{formatCurrency(product.unitPrice)}</td>
                       <td className="px-4 py-3 text-sm text-slate-300">
                         {product.currentStock} / {product.minimumStock}
