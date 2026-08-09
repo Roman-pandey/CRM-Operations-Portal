@@ -56,13 +56,18 @@ export const ProductForm = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const payload = {
-        ...formData,
+      const payload: any = {
+        productName: formData.productName,
+        sku: formData.sku,
+        category: formData.category || undefined,
         unitPrice: Number(formData.unitPrice),
         minimumStock: Number(formData.minimumStock),
-        // include currentStock only in create mode
-        ...(isEdit ? {} : { currentStock: Number(formData.currentStock) })
+        warehouseLocation: formData.warehouseLocation || undefined,
       };
+
+      if (!isEdit) {
+        payload.currentStock = Number(formData.currentStock);
+      }
 
       if (isEdit && id) {
         await productApi.update(Number(id), payload);

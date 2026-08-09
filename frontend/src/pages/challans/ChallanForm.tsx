@@ -105,8 +105,11 @@ export const ChallanForm = () => {
     try {
       setSubmitting(true);
       const payload = {
-        customerId: selectedCustomerId!,
-        items: items.map(i => ({ productId: i.productId!, quantity: i.quantity }))
+        customerId: Number(selectedCustomerId),
+        items: items.map(i => ({
+          productId: Number(i.productId),
+          quantity: Number(i.quantity)
+        }))
       };
       
       const newChallan = await challanApi.create(payload);
@@ -120,7 +123,7 @@ export const ChallanForm = () => {
       
       navigate(`/challans/${newChallan.id}`);
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || err?.message || 'Failed to save challan');
+      toast.error(err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Failed to save challan');
     } finally {
       setSubmitting(false);
       setConfirmDialogOpen(false);

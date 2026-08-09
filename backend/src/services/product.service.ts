@@ -43,12 +43,26 @@ export const updateProduct = async (id: number, data: Prisma.ProductUpdateInput)
 };
 
 export const deleteProduct = async (id: number) => {
-  const itemsCount = await prisma.challanItem.count({ where: { productId: id } });
-  if (itemsCount > 0) {
-    throw new ApiError(400, 'Cannot delete product referenced in challans');
+  const confirmedItemsCount = await prisma.challanItem.count({
+    where: {
+      productId: id,
+      challan: { status: 'CONFIRMED' }
+    }
+  });
+
+  if (confirmedItemsCount > 0) {
+    throw new ApiError(400, 'Cannot delete product referenced in confirmed sales challans');
   }
-  await prisma.product.delete({ where: { id } });
-  return true;
+
+  return await prisma.$transaction(async (tx) => {
+    // Delete any draft items referencing this product
+    await tx.challanItem.deleteMany({ where: { productId: id } });
+    // Delete stock movements referencing this product
+    await tx.stockMovement.deleteMany({ where: { productId: id } });
+    // Delete the product
+    await tx.product.delete({ where: { id } });
+    return true;
+  });
 };
 
 export const getLowStockProducts = async () => {

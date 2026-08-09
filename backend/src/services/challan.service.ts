@@ -39,11 +39,14 @@ export const getChallanById = async (id: number) => {
 
 export const createChallan = async (data: any, userId: number) => {
   return await prisma.$transaction(async (tx) => {
+    const customer = await tx.customer.findFirst({ where: { id: data.customerId, isDeleted: false } });
+    if (!customer) throw new ApiError(404, 'Selected customer does not exist or has been deleted');
+
     const totalQuantity = data.items.reduce((acc: number, item: any) => acc + item.quantity, 0);
     
     const itemsData = await Promise.all(data.items.map(async (item: any) => {
       const product = await tx.product.findUnique({ where: { id: item.productId } });
-      if (!product) throw new ApiError(404, `Product ${item.productId} not found`);
+      if (!product) throw new ApiError(404, `Product ID ${item.productId} not found`);
       return {
         productId: item.productId,
         quantity: item.quantity,
