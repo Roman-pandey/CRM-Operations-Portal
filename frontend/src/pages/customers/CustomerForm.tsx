@@ -76,8 +76,16 @@ export const CustomerForm = () => {
     try {
       setSaving(true);
       const dataToSubmit = {
-        ...formData,
-        followUpDate: formData.followUpDate ? new Date(formData.followUpDate).toISOString() : null,
+        customerName: formData.customerName.trim(),
+        mobile: formData.mobile.trim(),
+        email: formData.email.trim() || undefined,
+        businessName: formData.businessName.trim() || undefined,
+        gstNumber: formData.gstNumber.trim() || undefined,
+        customerType: formData.customerType,
+        address: formData.address.trim() || undefined,
+        status: formData.status,
+        followUpDate: formData.followUpDate ? new Date(formData.followUpDate).toISOString() : undefined,
+        notes: formData.notes.trim() || undefined,
       };
 
       if (isEditMode && id) {
@@ -88,8 +96,8 @@ export const CustomerForm = () => {
         toast.success('Customer created successfully');
       }
       navigate('/customers');
-    } catch (error) {
-      toast.error(isEditMode ? 'Failed to update customer' : 'Failed to create customer');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || (isEditMode ? 'Failed to update customer' : 'Failed to create customer'));
     } finally {
       setSaving(false);
     }

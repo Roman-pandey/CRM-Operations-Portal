@@ -3,14 +3,14 @@ import { z } from 'zod';
 export const createCustomerSchema = z.object({
   customerName: z.string().min(1, 'Customer name is required'),
   mobile: z.string().min(1, 'Mobile number is required'),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  businessName: z.string().optional(),
-  gstNumber: z.string().optional(),
+  email: z.string().email('Invalid email').optional().nullable().or(z.literal('')),
+  businessName: z.string().optional().nullable().or(z.literal('')),
+  gstNumber: z.string().optional().nullable().or(z.literal('')),
   customerType: z.enum(['RETAIL', 'WHOLESALE', 'DISTRIBUTOR']).default('RETAIL'),
-  address: z.string().optional(),
+  address: z.string().optional().nullable().or(z.literal('')),
   status: z.enum(['LEAD', 'ACTIVE', 'INACTIVE']).default('LEAD'),
-  followUpDate: z.string().optional(),
-  notes: z.string().optional()
+  followUpDate: z.string().optional().nullable().or(z.literal('')),
+  notes: z.string().optional().nullable().or(z.literal('')),
 });
 
 export const updateCustomerSchema = createCustomerSchema.partial();

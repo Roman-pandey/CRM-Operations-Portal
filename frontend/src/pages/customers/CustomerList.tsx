@@ -94,7 +94,14 @@ export const CustomerList = () => {
       <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow-xl p-6">
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="flex-1">
-            <SearchBar value={search} onChange={setSearch} placeholder="Search customers..." />
+            <SearchBar 
+              value={search} 
+              onChange={(val: string) => {
+                setSearch(val);
+                setPage(1);
+              }} 
+              placeholder="Search by customer name, business, mobile or email..." 
+            />
           </div>
           <div className="flex gap-4">
             <select

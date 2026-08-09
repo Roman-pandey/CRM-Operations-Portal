@@ -1,35 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 
 interface SearchBarProps {
   onSearch?: (query: string) => void;
   value?: string;
-  onChange?: (e: any) => void;
+  onChange?: (value: any) => void;
   placeholder?: string;
   className?: string;
 }
 
-export const SearchBar = ({ onSearch, value: externalValue, onChange: externalOnChange, placeholder = 'Search...', className = '' }: SearchBarProps) => {
+export const SearchBar = ({ 
+  onSearch, 
+  value: externalValue, 
+  onChange: externalOnChange, 
+  placeholder = 'Search...', 
+  className = '' 
+}: SearchBarProps) => {
+  const isControlled = externalValue !== undefined;
   const [internalQuery, setInternalQuery] = useState('');
 
-  const isControlled = externalValue !== undefined;
-  const currentQuery = isControlled ? externalValue : internalQuery;
-
-  useEffect(() => {
-    if (!isControlled && onSearch) {
-      const timer = setTimeout(() => {
-        onSearch(internalQuery);
-      }, 300);
-
-      return () => clearTimeout(timer);
-    }
-  }, [internalQuery, onSearch, isControlled]);
+  // Extract clean string query (handling accidental non-string values)
+  const currentQuery = isControlled 
+    ? (typeof externalValue === 'string' ? externalValue : '') 
+    : internalQuery;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (!isControlled) {
+      setInternalQuery(val);
+    }
     if (externalOnChange) {
-      externalOnChange(e);
-    } else {
-      setInternalQuery(e.target.value);
+      externalOnChange(val);
+    }
+    if (onSearch) {
+      onSearch(val);
     }
   };
 
